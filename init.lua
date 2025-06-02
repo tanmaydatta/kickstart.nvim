@@ -97,7 +97,30 @@ vim.g.have_nerd_font = false
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
+vim.o.wildignore = vim.o.wildignore
+  .. '*.firehose.go'
+  .. '*.pb.go'
+  .. '*.proto.desc'
+  .. '*.router.go'
+  .. '*.streams.go'
+  .. '*.typhon.go'
+  .. '*.validator.go'
+  .. '*.rule'
 
+-- Append directories to the 'path' option
+
+vim.opt.path:append '$HOME/src'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/tools'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/libraries'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/catalog/components'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/catalog/owners'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/catalog/systems'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/bin'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/vendor/github.com/monzo'
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/vendor/github.com/gocql' -- allows us to do :find gocql
+vim.opt.path:append '$HOME/src/github.com/monzo/wearedev/vendor/github.com/Shopify' -- allows us to do :find sarama
+vim.opt.path:append '$HOME/src/github.com/monzo'
 -- Make line numbers default
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
@@ -166,16 +189,82 @@ vim.o.scrolloff = 10
 -- See `:help 'confirm'`
 vim.o.confirm = true
 
+-- Create the augroup, clearing any existing autocommands within it first
+local monzo_group = vim.api.nvim_create_augroup('Monzo', { clear = true })
+
+local events = { 'BufRead', 'BufNewFile' }
+
+-- Helper function for the command, as it's the same for all
+local function set_readonly()
+  vim.opt_local.readonly = true
+end
+
+-- Autocommand 1
+vim.api.nvim_create_autocmd(events, {
+  group = monzo_group,
+  pattern = '$GOPATH/src/github.com/monzo/wearedev/vendor/*',
+  callback = set_readonly,
+})
+
+-- Autocommand 2
+vim.api.nvim_create_autocmd(events, {
+  group = monzo_group,
+  pattern = '$GOPATH/src/github.com/monzo/wearedev/{service,cron}.*/manifests/*-template.{yml,yaml}',
+  callback = set_readonly,
+})
+
+-- Autocommand 3
+vim.api.nvim_create_autocmd(events, {
+  group = monzo_group,
+  pattern = '$GOPATH/src/github.com/monzo/wearedev/{service,cron}.*/proto/*.{firehose.go,pb.go,proto.desc,router.go,streams.go,typhon.go,validator.go}',
+  callback = set_readonly,
+})
+
+-- Autocommand 4
+vim.api.nvim_create_autocmd(events, {
+  group = monzo_group,
+  pattern = '$GOPATH/src/github.com/monzo/wearedev/service.*/crons/crons.json',
+  callback = set_readonly,
+})
+
+-- Autocommand 5
+vim.api.nvim_create_autocmd(events, {
+  group = monzo_group,
+  pattern = '$GOPATH/src/github.com/monzo/wearedev/CODEOWNERS',
+  callback = set_readonly,
+})
+
+-- No explicit "augroup END" is needed in Lua when using the API this way.
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
+vim.keymap.set('n', '<leader>yr', function()
+  local relative_path = vim.fn.expand '%'
+  if relative_path == '' then
+    vim.notify('No file name (buffer is unnamed or not a file)', vim.log.levels.WARN)
+    return
+  end
+  vim.fn.setreg('+', relative_path)
+  vim.notify('Copied relative path: ' .. relative_path, vim.log.levels.INFO)
+end, { desc = 'Copy Relative File Path to clipboard' })
 
+vim.keymap.set('n', '<leader>yf', function()
+  local filepath = vim.api.nvim_buf_get_name(0)
+  if filepath == '' or filepath == nil then
+    vim.notify('No file name (buffer is unnamed or not associated with a file)', vim.log.levels.WARN)
+    return
+  end
+
+  vim.fn.setreg('+', filepath)
+  vim.notify('Copied absolute path: ' .. filepath, vim.log.levels.INFO)
+end, { desc = 'Copy Full File Path to clipboard' })
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
-
+vim.api.nvim_set_keymap('n', '<leader>b', ":lua require('lua/custom/telescope').my_buffer()<cr>", { noremap = true })
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -247,8 +336,23 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
-
+  -- 'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  { 'echasnovski/mini.nvim', version = false },
+  {
+    'echasnovski/mini.files',
+    version = false,
+    config = function()
+      require('mini.files').setup()
+    end,
+  },
+  {
+    'ibhagwan/fzf-lua',
+    -- optional for icon support
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    -- or if using mini.icons/mini.nvim
+    -- dependencies = { "echasnovski/mini.icons" },
+    opts = {},
+  },
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
   -- keys can be used to configure plugin behavior/loading/etc.
@@ -426,16 +530,43 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
+
+      local action_state = require 'telescope.actions.state'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', function()
+        require('fzf-lua').files()
+      end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>sg', function()
+        require('fzf-lua').live_grep()
+      end, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      --      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader><leader>', function()
+        builtin.buffers({
+          initial_mode = 'normal',
+          attach_mappings = function(prompt_bufnr, map)
+            local delete_buf = function()
+              local current_picker = action_state.get_current_picker(prompt_bufnr)
+              current_picker:delete_selection(function(selection)
+                vim.api.nvim_buf_delete(selection.bufnr, { force = true })
+              end)
+            end
+
+            map('n', '<c-d>', delete_buf)
+
+            return true
+          end,
+        }, {
+          sort_lastused = true,
+          sort_mru = true,
+          theme = 'dropdown',
+        })
+      end)
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -452,6 +583,7 @@ require('lazy').setup({
         builtin.live_grep {
           grep_open_files = true,
           prompt_title = 'Live Grep in Open Files',
+          previewer = false,
         }
       end, { desc = '[S]earch [/] in Open Files' })
 
@@ -672,7 +804,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -681,7 +813,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
+        ts_ls = {},
         --
 
         lua_ls = {
@@ -732,6 +864,39 @@ require('lazy').setup({
             require('lspconfig')[server_name].setup(server)
           end,
         },
+      }
+      require('lspconfig').gopls.setup {
+        -- Run gopls with Go modules disabled.
+        cmd = { 'env', 'GO111MODULE=on', 'gopls', '-remote=auto' },
+
+        -- Treat anything containing these files as a root directory. This
+        -- prevents us ascending too far toward the root of the repository, which
+        -- stops us from trying to ingest too much code.
+        root_dir = function(startpath)
+          local root_markers = { 'README.md', 'main.go', 'go.mod', 'LICENSE', '.git' }
+          local matches = vim.fs.find(root_markers, {
+            path = startpath,
+            upward = true,
+            limit = 1,
+          })
+
+          -- If there are no matches, fall back to finding the Git ancestor.
+          if #matches == 0 then
+            return vim.fs.dirname(vim.fs.find('.git', { path = startpath, upward = true })[1])
+          end
+
+          local root_dir = vim.fn.fnamemodify(matches[1], ':p:h')
+          return root_dir
+        end,
+        -- Never use wearedev as a root path. It'll grind your machine to a halt.
+        ignoredRootPaths = { '$HOME/src/github.com/monzo/wearedev/' },
+        flags = {
+          -- gopls is a particularly slow language server, especially in wearedev.
+          -- Debounce text changes so that we don't send loads of updates.
+          debounce_text_changes = 500,
+        },
+        -- Collect less information about packages without open files.
+        memoryMode = 'DegradeClosed',
       }
     end,
   },
@@ -975,10 +1140,19 @@ require('lazy').setup({
   --
   -- require 'kickstart.plugins.debug',
   -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
+  --  require 'kickstart.plugins.neo-tree',
+
+  --  vim.keymap.set('n', '<leader>r', '<cmd>Neotree reveal<CR>', { desc = 'Neo-tree: Reveal current file' }),
+
+  vim.keymap.set('n', '<leader>~', function()
+    local buf_name = vim.api.nvim_buf_get_name(0)
+    local path = vim.fn.filereadable(buf_name) == 1 and buf_name or vim.fn.getcwd()
+    MiniFiles.open(path)
+    MiniFiles.reveal_cwd()
+  end, { desc = 'Mini files: Reveal current file' }),
+  require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
