@@ -369,6 +369,39 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   -- 'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
   { 'echasnovski/mini.nvim', version = false },
+
+  -- [[ Inside your require('lazy').setup({ ... }) table ]]
+
+  {
+    'akinsho/toggleterm.nvim',
+    version = '*',
+    config = function() -- This function takes precedence
+      require('toggleterm').setup { -- These options are applied
+        size = 20,
+        hide_numbers = true,
+        autochdir = true,
+        direction = 'horizontal',
+        shell = vim.o.shell,
+        auto_scroll = true, -- This is a valid option
+        insert_mappings = true,
+        start_in_insert = true,
+        persist_size = true,
+        shading_factor = 2,
+        persist_mode = true,
+      }
+
+      vim.keymap.set('n', '<space>td', ':ToggleTerm<CR>')
+    end,
+    opts = { -- These options are currently NOT applied because you have a custom config function
+      direction = 'horizontal',
+      persist_mode = true,
+      size = 12,
+      start_in_insert = true,
+      persist_size = true,
+      shading_factor = 2,
+    },
+  },
+  -- ... rest of your plugins
   {
     'echasnovski/mini.files',
     version = false,
