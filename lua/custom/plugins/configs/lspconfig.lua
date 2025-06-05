@@ -222,7 +222,7 @@ return function()
   local ensure_installed = vim.tbl_keys(servers or {})
   vim.list_extend(ensure_installed, {
     'stylua', -- Used to format Lua code
-    'sqlitelua', -- For nvim-neoclip (sqlite.lua)
+    -- 'sqlitelua', -- For nvim-neoclip (sqlite.lua)
   })
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 

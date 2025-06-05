@@ -320,7 +320,6 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- LSP-specific keymaps (e.g., for go-to-definition, references) are defined within the
 -- LspAttach autocommand callback in lua/custom/plugins/configs/lspconfig.lua.
 
-
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -432,7 +431,7 @@ require('lazy').setup({
         persist_mode = true,
       }
 
-  vim.keymap.set('n', '<space>td', ':ToggleTerm<CR>') -- This keymap is for ToggleTerm
+      vim.keymap.set('n', '<space>td', ':ToggleTerm<CR>') -- This keymap is for ToggleTerm
     end,
     opts = { -- These options are currently NOT applied because you have a custom config function
       direction = 'horizontal',
@@ -591,7 +590,7 @@ require('lazy').setup({
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
-    config = require('custom.plugins.configs.telescope'),
+    config = require 'custom.plugins.configs.telescope',
   },
 
   -- LSP Plugins
@@ -624,7 +623,7 @@ require('lazy').setup({
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
     },
-    config = require('custom.plugins.configs.lspconfig'),
+    config = require 'custom.plugins.configs.lspconfig',
   },
 
   { -- Autoformat
@@ -703,7 +702,7 @@ require('lazy').setup({
     },
     --- @module 'blink.cmp'
     --- @type blink.cmp.Config
-    opts = require('custom.plugins.configs.blink_cmp'),
+    opts = require 'custom.plugins.configs.blink_cmp',
   },
 
   { -- You can easily change to a different colorscheme.
