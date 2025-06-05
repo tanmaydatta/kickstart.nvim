@@ -731,6 +731,16 @@ require('lazy').setup({
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
+  { -- Clipboard manager
+    'AckslD/nvim-neoclip.lua',
+    dependencies = {
+      'kkharji/sqlite.lua',
+      -- You may optionally want to install telescope-ui-select.nvim
+      -- { 'nvim-telescope/telescope-ui-select.nvim' }
+    },
+    config = require('custom.plugins.configs.neoclip').setup,
+  },
+
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
