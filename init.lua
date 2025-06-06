@@ -364,15 +364,15 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   -- 'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
   { 'echasnovski/mini.nvim', version = false },
-
-  {
-    'tris203/precognition.nvim',
-    config = function()
-      require('precognition').setup()
-    end,
-  },
+  -- {
+  --   'tris203/precognition.nvim',
+  --   config = function()
+  --     require('precognition').setup()
+  --   end,
+  -- },
   -- [[ Inside your require('lazy').setup({ ... }) table ]]
   -- Using Lazy
+  -- { 'andymass/vim-matchup' },
   {
     'navarasu/onedark.nvim',
     priority = 1000, -- make sure to load this before all the other start plugins
@@ -789,7 +789,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'python' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -801,6 +801,57 @@ require('lazy').setup({
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
+  },
+  {
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+    config = function()
+      require('nvim-treesitter.configs').setup {
+        textobjects = {
+          select = {
+            enable = true,
+            lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
+            keymaps = {
+              -- 'a' (around) and 'i' (inner) text objects for conditionals
+              ['ac'] = '@conditional.outer', -- 'around conditional' (the entire if/elif/else block)
+              ['ic'] = '@conditional.inner', -- 'inner conditional' (the body of the current if/elif/else)
+
+              -- You can also define more general 'block' text objects
+              ['ab'] = '@block.outer', -- 'around block' (e.g., function, class, loop, or conditional block)
+              ['ib'] = '@block.inner', -- 'inner block' (the content of the block)
+
+              -- If you want to jump to the *start* of the closest conditional:
+              -- You can map a visual selection and then a motion to start of selection.
+              ['vc'] = '@conditional.outer', -- Visually select the closest conditional
+            },
+          },
+          -- The 'move' module is for jumping to *next/previous* occurrences,
+          -- which is not what you're asking for in "closest to me".
+          -- However, it's good to have for other navigation needs.
+          move = {
+            enable = true,
+            set_jumps = true,
+            goto_next_start = {
+              [']c'] = '@conditional.outer', -- Next conditional start
+            },
+            goto_previous_start = {
+              ['[c'] = '@conditional.outer', -- Previous conditional start
+            },
+            -- Or more general block movements:
+            [']b'] = '@block.outer',
+            ['[b'] = '@block.outer',
+          },
+
+          vim.api.nvim_set_keymap(
+            'n',
+            '<leader>fi',
+            ":lua require('custom/plugins/configs/treesitter_textobjects').jump_to_closest_block()<cr>",
+            { noremap = true, desc = 'Jump to closest if/elif/else' }
+          ),
+        },
+      }
+    end,
+    -- in your plugin manager
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
     --
