@@ -365,6 +365,12 @@ require('lazy').setup({
   -- 'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
   { 'echasnovski/mini.nvim', version = false },
 
+  {
+    'tris203/precognition.nvim',
+    config = function()
+      require('precognition').setup()
+    end,
+  },
   -- [[ Inside your require('lazy').setup({ ... }) table ]]
   -- Using Lazy
   {
