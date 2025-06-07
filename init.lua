@@ -374,6 +374,24 @@ require('lazy').setup({
   -- Using Lazy
   -- { 'andymass/vim-matchup' },
   {
+    'stevanmilic/nvim-lspimport',
+    dependencies = { 'neovim/nvim-lspconfig' }, -- Make sure lspconfig is loaded before this
+    config = function()
+      -- You can configure a keymap to trigger the import resolution
+      -- Choose a keymap that makes sense to you. `<leader>i` is common.
+      vim.keymap.set('n', '<leader>i', function()
+        require('lspimport').import()
+      end, { noremap = true, desc = 'LSP: Auto Import' })
+
+      -- You might also want to set it up as a normal code action via 'gra'
+      -- (though this might duplicate some native LSP code actions, test it)
+      -- This makes `lspimport` act like a code action provider.
+      -- require('lspimport').setup {}
+      -- Options here. For example, you might want to automatically add a space after imports
+      -- add_space_after_imports = true,
+    end,
+  },
+  {
     'navarasu/onedark.nvim',
     priority = 1000, -- make sure to load this before all the other start plugins
     config = function()
@@ -920,3 +938,4 @@ require('lazy').setup({
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+-- test something

@@ -7,6 +7,7 @@ return {
       local lint = require 'lint'
       lint.linters_by_ft = {
         markdown = { 'markdownlint' },
+        python = { 'pylint' },
       }
 
       -- To allow other plugins to add linters to require('lint').linters_by_ft,
@@ -44,7 +45,7 @@ return {
       -- Create autocommand which carries out the actual linting
       -- on the specified events.
       local lint_augroup = vim.api.nvim_create_augroup('lint', { clear = true })
-      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave' }, {
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWritePost', 'InsertLeave', 'TextChanged', 'TextChanged' }, {
         group = lint_augroup,
         callback = function()
           -- Only run the linter in buffers that you can modify in order to
@@ -55,6 +56,9 @@ return {
           end
         end,
       })
+      local filepath = vim.api.nvim_buf_get_name(0)
+      require('lint').linters.pylint.cmd = 'pylint'
+      require('lint').linters.pylint.args = { '--disable=C,W', '-f', 'json', filepath }
     end,
   },
 }

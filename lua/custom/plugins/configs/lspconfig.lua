@@ -47,8 +47,12 @@ return function()
 
       -- Execute a code action, usually your cursor needs to be on top of an error
       -- or a suggestion from your LSP for this to activate.
-      map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-
+      -- map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+      if vim.lsp.buf.range_code_action then
+        map('gra', vim.lsp.buf.range_code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+      else
+        map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+      end
       -- Find references for the word under your cursor.
       map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
 
@@ -97,6 +101,10 @@ return function()
       --
       -- When you move your cursor, the highlights will be cleared (the second autocommand).
       local client = vim.lsp.get_client_by_id(event.data.client_id)
+      if client and client.name == 'ruff' then
+        -- Disable hover in favor of Pyright
+        client.server_capabilities.codeActionProvider = false
+      end
       if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -179,7 +187,24 @@ return function()
   local servers = {
     -- clangd = {},
     gopls = {},
-    pyright = {},
+    -- pyright = {
+    --   settings = {
+    --     python = {
+    --       analysis = {
+    --         -- This is usually true by default, but you can explicitly set it
+    --         autoImportCompletions = true,
+    --         -- This also helps with auto-imports during completion
+    --         addImportOnTypeCompletion = true,
+    --         -- Ensure your environment path is correct if pyright has trouble finding modules
+    --         -- extraPaths = {
+    --         --   vim.fn.expand('~/.local/share/pypoetry/venv/lib/python3.10/site-packages'),
+    --         -- },
+    --       },
+    --     },
+    --   },
+    -- },
+    pylsp = {},
+    ruff = {},
     -- rust_analyzer = {},
     -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
     --
@@ -272,5 +297,36 @@ return function()
     },
     -- Collect less information about packages without open files.
     memoryMode = 'DegradeClosed',
+  }
+  require('lspconfig').ruff.setup {
+    init_options = {
+      settings = {
+        -- enable = false,
+        lint = {
+          enable = true,
+          select = { 'ALL' },
+          ignore = { 'E' },
+        },
+        -- Ruff language server settings go here
+        -- codeAction = {
+        --   disableRuleComment = {
+        --     enable = false,
+        --   },
+        -- },
+      },
+    },
+  }
+  require('lspconfig').pylsp.setup {
+    settings = {
+      pylsp = {
+        plugins = {
+          -- pyflakes = { enabled = true },
+          -- pylint = { enabled = true },
+          -- mccabe = { enabled = true },
+          -- pycodestyle = { enabled = true },
+          rope_autoimport = { enabled = true },
+        },
+      },
+    },
   }
 end
