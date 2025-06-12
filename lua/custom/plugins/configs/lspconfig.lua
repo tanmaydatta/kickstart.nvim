@@ -186,7 +186,10 @@ return function()
   --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
   local servers = {
     -- clangd = {},
-    gopls = {},
+    -- gopls = {},
+    pylsp = {},
+    mypy = {},
+    pyright = {},
     -- pyright = {
     --   settings = {
     --     python = {
@@ -203,7 +206,7 @@ return function()
     --     },
     --   },
     -- },
-    pylsp = {},
+
     ruff = {},
     -- rust_analyzer = {},
     -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -254,9 +257,16 @@ return function()
   require('mason-lspconfig').setup {
     ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
     automatic_installation = false,
+    -- automatic_enable = false,
     handlers = {
       function(server_name)
         local server = servers[server_name] or {}
+        if server_name == 'pylsp' then
+          print 'skip pylsp from mason'
+          return -- ❌ do not call setup
+        end
+        print 'Pylsp debug'
+
         -- This handles overriding only values explicitly passed
         -- by the server configuration above. Useful when disabling
         -- certain features of an LSP (for example, turning off formatting for ts_ls)
@@ -298,35 +308,88 @@ return function()
     -- Collect less information about packages without open files.
     memoryMode = 'DegradeClosed',
   }
-  require('lspconfig').ruff.setup {
-    init_options = {
-      settings = {
-        -- enable = false,
-        lint = {
-          enable = true,
-          select = { 'ALL' },
-          ignore = { 'E' },
+  -- require('lspconfig').ruff.setup {
+  --   init_options = {
+  --     settings = {
+  --       -- enable = false,
+  --       lint = {
+  --         enable = true,
+  --       },
+  --       -- Ruff language server settings go here
+  --       -- codeAction = {
+  --       --   disableRuleComment = {
+  --       --     enable = false,
+  --       --   },
+  --       -- },
+  --     },
+  --   },
+  -- }
+  require('lspconfig').pyright.setup {
+    settings = {
+      pyright = {
+        -- Using Ruff's import organizer
+        disableOrganizeImports = true,
+      },
+      python = {
+        analysis = {
+          -- Ignore all files for analysis to exclusively use Ruff for linting
+          ignore = { '*' },
         },
-        -- Ruff language server settings go here
-        -- codeAction = {
-        --   disableRuleComment = {
-        --     enable = false,
-        --   },
-        -- },
       },
     },
   }
-  require('lspconfig').pylsp.setup {
+  local server = {
     settings = {
       pylsp = {
         plugins = {
-          -- pyflakes = { enabled = true },
-          -- pylint = { enabled = true },
-          -- mccabe = { enabled = true },
-          -- pycodestyle = { enabled = true },
-          rope_autoimport = { enabled = true },
+          pyflakes = { enabled = false },
+          pycodestyle = { enabled = false },
+          autopep8 = { enabled = false },
+          yapf = { enabled = false },
+          mccabe = { enabled = false },
+          pylsp_mypy = { enabled = true },
+          pylsp_black = { enabled = false },
+          pylsp_isort = { enabled = false },
+          pylint = { enabled = false },
+          flake8 = { enabled = false },
+          pydocstyle = { enabled = false },
+          -- Keep navigation-related plugins enabled
+          -- rope_completion = { enabled = true },
+          -- jedi_completion = { enabled = true },
+          -- jedi_definition = { enabled = true },
+          -- jedi_hover = { enabled = true },
+          -- jedi_references = { enabled = true },
+          -- jedi_signature_help = { enabled = true },
+          -- jedi_symbols = { enabled = true },
         },
       },
     },
   }
+  print(vim.print(server))
+
+  print 'tanmay debug'
+  server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+  require('lspconfig')['pylsp'].setup(server)
+
+  -- require('lspconfig').pylsp.setup {
+  --   settings = {
+  --     pylsp = {
+  --       disableDiagnostics = true,
+  --       plugins = {
+  --         pyflakes = { enabled = false },
+  --         pycodestyle = { enabled = false },
+  --         autopep8 = { enabled = false },
+  --         yapf = { enabled = false },
+  --         mccabe = { enabled = false },
+  --         pylsp_mypy = { enabled = false },
+  --         pylsp_black = { enabled = false },
+  --         pylsp_isort = { enabled = false },
+  --         pylint = { enabled = false },
+  --         flake8 = { enabled = false },
+  --         pydocstyle = { enabled = false },
+  --       },
+  --     },
+  --   },
+  -- }
+  --
 end
